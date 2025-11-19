@@ -1,0 +1,348 @@
+package com.hdsoft.Repositories;
+
+public class individual_info 
+{
+	private String REPORTINGDATE;
+	private String RELATIONSHIPTYPE;
+	private String CUSTOMERIDENTIFICATIONNUMBER;
+	private String SEGMENTCODE;
+	private String CUSTSEGMENTCODE;
+	private String FIRSTNAME;
+	private String MIDDLENAMES;
+	private String FULLNAMES;
+	private String PRESENTSURNAME;
+	private String BIRTHSURNAME;
+	private String GENDER;
+	private String MARITALSTATUS;
+	private String NUMBERSPOUSE;
+	private String NATIONALITY;
+	private String CITIZENSHIP;
+	private String RESIDENCY;
+	private String PROFESSION;
+	private String SECTORSNACLASSIFICATION;
+	private String FATESTATUS;
+	private String SOCIALSTATUS;
+	private String EMPLOYMENTSTATUS;
+	private String MONTHLYINCOME;
+	private String NUMBERDEPENDANTS;
+	private String EDUCATIONLEVEL;
+	private String AVERAGEMONTHLYEXPENDITURE;
+	private String BIRTHDATE;
+	private String BIRTHCOUNTRY;
+	private String BIRTHREGION;
+	private String BIRTHDISTRICT;
+	private String IDENTIFICATIONTYPE;
+	private String IDENTIFICATIONNUMBER;
+	private String ISSUANCEDATE;
+	private String EXPIRATIONDATE;
+	private String ISSUANCEPLACE;
+	private String ISSUINGAUTHORITY;
+	private String BUSINESSNAME;
+	private String ESTABLISHMENTDATE;
+	private String BUSINESSREGISTRATIONNUMBER;
+	private String BUSINESSREGISTRATIONDATE;
+	private String BUSINESSLICENSENUMBER;
+	private String TAXIDENTIFICATIONNUMBER;
+	private String EMPLOYERNAME;
+	private String EMPLOYERREGION;
+	private String EMPLOYERDISTRICT;
+	private String BUSINESSNATURE;
+	private String MAINADDRESS;
+	private String REGION;
+	private String WARD;
+	private String COUNTRY;
+	public String getREPORTINGDATE() {
+		return REPORTINGDATE;
+	}
+	public void setREPORTINGDATE(String rEPORTINGDATE) {
+		REPORTINGDATE = rEPORTINGDATE;
+	}
+	public String getRELATIONSHIPTYPE() {
+		return RELATIONSHIPTYPE;
+	}
+	public void setRELATIONSHIPTYPE(String rELATIONSHIPTYPE) {
+		RELATIONSHIPTYPE = rELATIONSHIPTYPE;
+	}
+	public String getCUSTOMERIDENTIFICATIONNUMBER() {
+		return CUSTOMERIDENTIFICATIONNUMBER;
+	}
+	public void setCUSTOMERIDENTIFICATIONNUMBER(String cUSTOMERIDENTIFICATIONNUMBER) {
+		CUSTOMERIDENTIFICATIONNUMBER = cUSTOMERIDENTIFICATIONNUMBER;
+	}
+	public String getSEGMENTCODE() {
+		return SEGMENTCODE;
+	}
+	public void setSEGMENTCODE(String sEGMENTCODE) {
+		SEGMENTCODE = sEGMENTCODE;
+	}
+	public String getCUSTSEGMENTCODE() {
+		return CUSTSEGMENTCODE;
+	}
+	public void setCUSTSEGMENTCODE(String cUSTSEGMENTCODE) {
+		CUSTSEGMENTCODE = cUSTSEGMENTCODE;
+	}
+	public String getFIRSTNAME() {
+		return FIRSTNAME;
+	}
+	public void setFIRSTNAME(String fIRSTNAME) {
+		FIRSTNAME = fIRSTNAME;
+	}
+	public String getMIDDLENAMES() {
+		return MIDDLENAMES;
+	}
+	public void setMIDDLENAMES(String mIDDLENAMES) {
+		MIDDLENAMES = mIDDLENAMES;
+	}
+	public String getFULLNAMES() {
+		return FULLNAMES;
+	}
+	public void setFULLNAMES(String fULLNAMES) {
+		FULLNAMES = fULLNAMES;
+	}
+	public String getPRESENTSURNAME() {
+		return PRESENTSURNAME;
+	}
+	public void setPRESENTSURNAME(String pRESENTSURNAME) {
+		PRESENTSURNAME = pRESENTSURNAME;
+	}
+	public String getBIRTHSURNAME() {
+		return BIRTHSURNAME;
+	}
+	public void setBIRTHSURNAME(String bIRTHSURNAME) {
+		BIRTHSURNAME = bIRTHSURNAME;
+	}
+	public String getGENDER() {
+		return GENDER;
+	}
+	public void setGENDER(String gENDER) {
+		GENDER = gENDER;
+	}
+	public String getMARITALSTATUS() {
+		return MARITALSTATUS;
+	}
+	public void setMARITALSTATUS(String mARITALSTATUS) {
+		MARITALSTATUS = mARITALSTATUS;
+	}
+	public String getNUMBERSPOUSE() {
+		return NUMBERSPOUSE;
+	}
+	public void setNUMBERSPOUSE(String nUMBERSPOUSE) {
+		NUMBERSPOUSE = nUMBERSPOUSE;
+	}
+	public String getNATIONALITY() {
+		return NATIONALITY;
+	}
+	public void setNATIONALITY(String nATIONALITY) {
+		NATIONALITY = nATIONALITY;
+	}
+	public String getCITIZENSHIP() {
+		return CITIZENSHIP;
+	}
+	public void setCITIZENSHIP(String cITIZENSHIP) {
+		CITIZENSHIP = cITIZENSHIP;
+	}
+	public String getRESIDENCY() {
+		return RESIDENCY;
+	}
+	public void setRESIDENCY(String rESIDENCY) {
+		RESIDENCY = rESIDENCY;
+	}
+	public String getPROFESSION() {
+		return PROFESSION;
+	}
+	public void setPROFESSION(String pROFESSION) {
+		PROFESSION = pROFESSION;
+	}
+	public String getSECTORSNACLASSIFICATION() {
+		return SECTORSNACLASSIFICATION;
+	}
+	public void setSECTORSNACLASSIFICATION(String sECTORSNACLASSIFICATION) {
+		SECTORSNACLASSIFICATION = sECTORSNACLASSIFICATION;
+	}
+	public String getFATESTATUS() {
+		return FATESTATUS;
+	}
+	public void setFATESTATUS(String fATESTATUS) {
+		FATESTATUS = fATESTATUS;
+	}
+	public String getSOCIALSTATUS() {
+		return SOCIALSTATUS;
+	}
+	public void setSOCIALSTATUS(String sOCIALSTATUS) {
+		SOCIALSTATUS = sOCIALSTATUS;
+	}
+	public String getEMPLOYMENTSTATUS() {
+		return EMPLOYMENTSTATUS;
+	}
+	public void setEMPLOYMENTSTATUS(String eMPLOYMENTSTATUS) {
+		EMPLOYMENTSTATUS = eMPLOYMENTSTATUS;
+	}
+	public String getMONTHLYINCOME() {
+		return MONTHLYINCOME;
+	}
+	public void setMONTHLYINCOME(String mONTHLYINCOME) {
+		MONTHLYINCOME = mONTHLYINCOME;
+	}
+	public String getNUMBERDEPENDANTS() {
+		return NUMBERDEPENDANTS;
+	}
+	public void setNUMBERDEPENDANTS(String nUMBERDEPENDANTS) {
+		NUMBERDEPENDANTS = nUMBERDEPENDANTS;
+	}
+	public String getEDUCATIONLEVEL() {
+		return EDUCATIONLEVEL;
+	}
+	public void setEDUCATIONLEVEL(String eDUCATIONLEVEL) {
+		EDUCATIONLEVEL = eDUCATIONLEVEL;
+	}
+	public String getAVERAGEMONTHLYEXPENDITURE() {
+		return AVERAGEMONTHLYEXPENDITURE;
+	}
+	public void setAVERAGEMONTHLYEXPENDITURE(String aVERAGEMONTHLYEXPENDITURE) {
+		AVERAGEMONTHLYEXPENDITURE = aVERAGEMONTHLYEXPENDITURE;
+	}
+	public String getBIRTHDATE() {
+		return BIRTHDATE;
+	}
+	public void setBIRTHDATE(String bIRTHDATE) {
+		BIRTHDATE = bIRTHDATE;
+	}
+	public String getBIRTHCOUNTRY() {
+		return BIRTHCOUNTRY;
+	}
+	public void setBIRTHCOUNTRY(String bIRTHCOUNTRY) {
+		BIRTHCOUNTRY = bIRTHCOUNTRY;
+	}
+	public String getBIRTHREGION() {
+		return BIRTHREGION;
+	}
+	public void setBIRTHREGION(String bIRTHREGION) {
+		BIRTHREGION = bIRTHREGION;
+	}
+	public String getBIRTHDISTRICT() {
+		return BIRTHDISTRICT;
+	}
+	public void setBIRTHDISTRICT(String bIRTHDISTRICT) {
+		BIRTHDISTRICT = bIRTHDISTRICT;
+	}
+	public String getIDENTIFICATIONTYPE() {
+		return IDENTIFICATIONTYPE;
+	}
+	public void setIDENTIFICATIONTYPE(String iDENTIFICATIONTYPE) {
+		IDENTIFICATIONTYPE = iDENTIFICATIONTYPE;
+	}
+	public String getIDENTIFICATIONNUMBER() {
+		return IDENTIFICATIONNUMBER;
+	}
+	public void setIDENTIFICATIONNUMBER(String iDENTIFICATIONNUMBER) {
+		IDENTIFICATIONNUMBER = iDENTIFICATIONNUMBER;
+	}
+	public String getISSUANCEDATE() {
+		return ISSUANCEDATE;
+	}
+	public void setISSUANCEDATE(String iSSUANCEDATE) {
+		ISSUANCEDATE = iSSUANCEDATE;
+	}
+	public String getEXPIRATIONDATE() {
+		return EXPIRATIONDATE;
+	}
+	public void setEXPIRATIONDATE(String eXPIRATIONDATE) {
+		EXPIRATIONDATE = eXPIRATIONDATE;
+	}
+	public String getISSUANCEPLACE() {
+		return ISSUANCEPLACE;
+	}
+	public void setISSUANCEPLACE(String iSSUANCEPLACE) {
+		ISSUANCEPLACE = iSSUANCEPLACE;
+	}
+	public String getISSUINGAUTHORITY() {
+		return ISSUINGAUTHORITY;
+	}
+	public void setISSUINGAUTHORITY(String iSSUINGAUTHORITY) {
+		ISSUINGAUTHORITY = iSSUINGAUTHORITY;
+	}
+	public String getBUSINESSNAME() {
+		return BUSINESSNAME;
+	}
+	public void setBUSINESSNAME(String bUSINESSNAME) {
+		BUSINESSNAME = bUSINESSNAME;
+	}
+	public String getESTABLISHMENTDATE() {
+		return ESTABLISHMENTDATE;
+	}
+	public void setESTABLISHMENTDATE(String eSTABLISHMENTDATE) {
+		ESTABLISHMENTDATE = eSTABLISHMENTDATE;
+	}
+	public String getBUSINESSREGISTRATIONNUMBER() {
+		return BUSINESSREGISTRATIONNUMBER;
+	}
+	public void setBUSINESSREGISTRATIONNUMBER(String bUSINESSREGISTRATIONNUMBER) {
+		BUSINESSREGISTRATIONNUMBER = bUSINESSREGISTRATIONNUMBER;
+	}
+	public String getBUSINESSREGISTRATIONDATE() {
+		return BUSINESSREGISTRATIONDATE;
+	}
+	public void setBUSINESSREGISTRATIONDATE(String bUSINESSREGISTRATIONDATE) {
+		BUSINESSREGISTRATIONDATE = bUSINESSREGISTRATIONDATE;
+	}
+	public String getBUSINESSLICENSENUMBER() {
+		return BUSINESSLICENSENUMBER;
+	}
+	public void setBUSINESSLICENSENUMBER(String bUSINESSLICENSENUMBER) {
+		BUSINESSLICENSENUMBER = bUSINESSLICENSENUMBER;
+	}
+	public String getTAXIDENTIFICATIONNUMBER() {
+		return TAXIDENTIFICATIONNUMBER;
+	}
+	public void setTAXIDENTIFICATIONNUMBER(String tAXIDENTIFICATIONNUMBER) {
+		TAXIDENTIFICATIONNUMBER = tAXIDENTIFICATIONNUMBER;
+	}
+	public String getEMPLOYERNAME() {
+		return EMPLOYERNAME;
+	}
+	public void setEMPLOYERNAME(String eMPLOYERNAME) {
+		EMPLOYERNAME = eMPLOYERNAME;
+	}
+	public String getEMPLOYERREGION() {
+		return EMPLOYERREGION;
+	}
+	public void setEMPLOYERREGION(String eMPLOYERREGION) {
+		EMPLOYERREGION = eMPLOYERREGION;
+	}
+	public String getEMPLOYERDISTRICT() {
+		return EMPLOYERDISTRICT;
+	}
+	public void setEMPLOYERDISTRICT(String eMPLOYERDISTRICT) {
+		EMPLOYERDISTRICT = eMPLOYERDISTRICT;
+	}
+	public String getBUSINESSNATURE() {
+		return BUSINESSNATURE;
+	}
+	public void setBUSINESSNATURE(String bUSINESSNATURE) {
+		BUSINESSNATURE = bUSINESSNATURE;
+	}
+	public String getMAINADDRESS() {
+		return MAINADDRESS;
+	}
+	public void setMAINADDRESS(String mAINADDRESS) {
+		MAINADDRESS = mAINADDRESS;
+	}
+	public String getREGION() {
+		return REGION;
+	}
+	public void setREGION(String rEGION) {
+		REGION = rEGION;
+	}
+	public String getWARD() {
+		return WARD;
+	}
+	public void setWARD(String wARD) {
+		WARD = wARD;
+	}
+	public String getCOUNTRY() {
+		return COUNTRY;
+	}
+	public void setCOUNTRY(String cOUNTRY) {
+		COUNTRY = cOUNTRY;
+	}
+}
