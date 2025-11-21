@@ -142,7 +142,6 @@
     </div>
     
     <p id="i_famount_msg" class="text-danger"></p>
-	<p id="i_tamount_msg" class="text-danger"></p>
     
 </div>
 

@@ -3,17 +3,16 @@ package com.hdsoft.models;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.channels.SelectableChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -26,8 +25,6 @@ import org.springframework.jdbc.core.CallableStatementCreator;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.SqlOutParameter;
 import org.springframework.jdbc.core.SqlParameter;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,7 +42,6 @@ import com.hdsoft.common.Common_Utils;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
-import com.opencsv.CSVWriter;
 import com.zaxxer.hikari.HikariDataSource;
 	
 @Controller
@@ -223,11 +219,20 @@ public class FIU_EDMP
 	        {
 	        	 String sql = null;	        	
 	        	 String Serial = Generate_FIU_Serial().get("Serial").getAsString();	        	 
-	        	 String filePath = file.getAbsolutePath(); 
-
-	        	 sql = "select * from fileit001 where srcpath = ?";
+	        	 String fileName = file.getName();
+	        	         	 
+//	        	 String sql = "SELECT * FROM fileit001 WHERE LOWER(srcpath) LIKE ?";
+//	        	 List<Map<String, Object>> FILEIT = Jdbctemplate.queryForList(
+//	        	         sql, new Object[]{"%" + fileName.toLowerCase()});
 	        	 
-	        	 List<Map<String, Object>> FILEIT = Jdbctemplate.queryForList(sql, new Object[]{filePath});
+	        	 sql = "SELECT * FROM fileit001 WHERE REGEXP_SUBSTR(srcpath, '[^/\\\\]+$') = ?";
+	        	 
+	        	 List<Map<String, Object>> FILEIT = Jdbctemplate.queryForList(sql, new Object[]{fileName} );
+        	         
+				 sql = "insert into fileit001(SUBORGCODE, CHCODE, PAYTYPE, REQDATE, REQREFNO, REQTIME, FILETYPE, SRCPATH, DSTPATH, REMARKS, STATUS, RESCODE, RESPDESC) values(?,?,?,?,?,?,?,?,?,?,?,?,?)";
+					
+				 Jdbctemplate.update(sql, new Object[] { SUBORGCODE, "FIU", "EDMP_FILE", util.getCurrentDate("dd-MMM-yyyy"), Serial, util.get_oracle_Timestamp(), "CSV", file.getPath(), "" , Serial, "", "", "" });
+
 	        	         	 
 	             if(FILEIT.isEmpty()) 
 	 	         {
@@ -247,8 +252,7 @@ public class FIU_EDMP
 	 	                   logger.warn("No data rows found in file: {}", file.getName());
 	 	                   isError = true;
 	 	                   continue;
-	 	                    
-	 	                   
+
 	 	                }
 
 	 	                if (file.getName().toLowerCase().contains("ctr")) 
@@ -360,28 +364,22 @@ public class FIU_EDMP
 	            
 	 	        }
 			
- 	            	bk_path =  backup_file(file);
+	             bk_path = backup_file(file);
 
- 
- 	            	if(FILEIT.isEmpty())
- 	            	{
- 		 	            if(isError)
- 		 	            {
- 							sql = "insert into fileit001(SUBORGCODE, CHCODE, PAYTYPE, REQDATE, REQREFNO, REQTIME, FILETYPE, SRCPATH, DSTPATH, REMARKS, STATUS, RESCODE, RESPDESC) values(?,?,?,?,?,?,?,?,?,?,?,?,?)";
- 							
- 							Jdbctemplate.update(sql, new Object[] { SUBORGCODE, "FIU", "EDMP_FILE", util.getCurrentDate("dd-MMM-yyyy"), Serial, util.get_oracle_Timestamp(), "CSV", file.getPath(), bk_path, Serial, "SUCCESS", "200", "FAILED" });
+	             if (isError) 
+	             {
+	                 sql = "UPDATE fileit001 SET DSTPATH=?, STATUS=?, RESCODE=?, RESPDESC=? WHERE REMARKS=?";
+	                 
+	                 Jdbctemplate.update(sql, new Object[]{bk_path, "FAILED", "500", "FAILED", Serial });
+	             } 
+	             
+	             else 
+	             {
+	                 sql = "UPDATE fileit001 SET DSTPATH=?, STATUS=?, RESCODE=?, RESPDESC=? WHERE REMARKS=?";
+	                 
+	                 Jdbctemplate.update(sql, new Object[]{ bk_path, "SUCCESS",  "200","FILE DOWNLOADED SUCCESS",Serial });
+	             }
 
- 		 	            }
- 		 	            else 
- 		 	            {
- 							sql = "insert into fileit001(SUBORGCODE, CHCODE, PAYTYPE, REQDATE, REQREFNO, REQTIME, FILETYPE, SRCPATH, DSTPATH, REMARKS, STATUS, RESCODE, RESPDESC) values(?,?,?,?,?,?,?,?,?,?,?,?,?)";
- 							
- 							Jdbctemplate.update(sql, new Object[] { SUBORGCODE, "FIU", "EDMP_FILE", util.getCurrentDate("dd-MMM-yyyy"), Serial, util.get_oracle_Timestamp(), "CSV", file.getPath(), bk_path, Serial, "SUCCESS", "200", "FILE DOWNLOADED success" });
-
- 						}
- 	            	}
-
-	       
 	    }
 	        details.addProperty("result", "success");
 	        details.addProperty("stscode", "HP00");
@@ -414,6 +412,8 @@ public class FIU_EDMP
 	        String SUBORGCODE = result.size() != 0 ? result.get(0) : "";  
 
 	        boolean isError = false;
+	        
+	        String bk_path = null;
 
 	        File folder = new File(PATH);
 	        File[] files = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".csv"));
@@ -433,10 +433,19 @@ public class FIU_EDMP
 	            String sql = null;
 
 	            String Serial = Generate_FIU_Serial().get("Serial").getAsString();
-	            String filePath = file.getAbsolutePath();
-
-	            sql = "SELECT * FROM fileit001 WHERE srcpath = ?";
-	            List<Map<String, Object>> FILEIT = Jdbctemplate.queryForList(sql, new Object[]{filePath});
+	        	String fileName = file.getName();
+	        	         	 
+//	        	 String sql = "SELECT * FROM fileit001 WHERE LOWER(srcpath) LIKE ?";
+//	        	 List<Map<String, Object>> FILEIT = Jdbctemplate.queryForList(
+//	        	         sql, new Object[]{"%" + fileName.toLowerCase()});
+	        	 
+	        	 sql = "SELECT * FROM fileit001 WHERE REGEXP_SUBSTR(srcpath, '[^/\\\\]+$') = ?";
+	        	 
+	        	 List<Map<String, Object>> FILEIT = Jdbctemplate.queryForList(sql, new Object[]{fileName} );
+       	         
+				 sql = "insert into fileit001(SUBORGCODE, CHCODE, PAYTYPE, REQDATE, REQREFNO, REQTIME, FILETYPE, SRCPATH, DSTPATH, REMARKS, STATUS, RESCODE, RESPDESC) values(?,?,?,?,?,?,?,?,?,?,?,?,?)";
+					
+				 Jdbctemplate.update(sql, new Object[] { SUBORGCODE, "FIU", "EDMP_FILE", util.getCurrentDate("dd-MMM-yyyy"), Serial, util.get_oracle_Timestamp(), "CSV", file.getPath(), "" , Serial, "", "", "" });
 
 	            if (FILEIT.isEmpty()) 
 	            {
@@ -451,7 +460,6 @@ public class FIU_EDMP
 	                    {
 	                        String[] cols = line.split("\\|", -1);
 
-	                        // FIXED: SQL expects 50 columns (excluding serial, seq)
 	                        int expectedColumns = 50;
 	                        int extraColumns = 51; // file may have 1 extra dummy column
 
@@ -470,296 +478,118 @@ public class FIU_EDMP
 	                    if (rows.size() <= 1) 
 	                    {
 	                        logger.warn("No data rows found in file: {}", file.getName());
+	                        isError = true;
 	                        continue;
 	                    }
 
-	                    // FINAL CORRECT SQL INSERT WITH EXACT 52 VALUES
-	                    sql = "INSERT INTO static_fiu (\n" +
-	                            "serial , seq , account_no, rel_id, currency_cd, category, master_no, primary_fg, gender,\n" +
-	                            "first_nm, middle_nm, last_nm, birth_dt, pob_place,\n" +
-	                            "inc_state, residence, nationality, id_type, id_no,\n" +
-	                            "expiry_dt, issue_dt, issue_country, contact_type, comm_type, phone_no,\n" +
-	                            "email, inst_name, branch, acc_holder_nm, acc_type, acc_desc,\n" +
-	                            "opened_dt, status_cd, inst_code, entity_nm, business_act, tax_id_no,\n" +
-	                            "trade_license_no, est_dt, addr_type, addr, city, country, state,\n" +
-	                            "occupation, employer_cd, employer_phone, employer_addr, role\n" +
-	                            ") VALUES (\n" +
-	                            "?,?,?,?,?,?,?,?,?,\n" +
-	                            "?,?,?,?,?,?,?,?,?,\n" +
-	                            "?,?,?,?,?,?,?,?,?,\n" +
-	                            "?,?,?,?,?,?,?,?,?,\n" +
-	                            "?,?,?,?,?,?,?,?,?,?,?\n" +
-	                            ")";
+	                    sql = "INSERT INTO STATIC_FIU ( " +
+	                    		"    serial, seq, account_no, rel_id, currency_cd, category, master_no, primary_fg, gender, " +
+	                    		"    first_nm, middle_nm, last_nm, birth_dt, pob_place, " +
+	                    		"    inc_state, residence, nationality, id_type, id_no, " +
+	                    		"    expiry_dt, issue_dt, issue_country, contact_type, comm_type, phone_no, " +
+	                    		"    email, inst_name, branch, acc_holder_nm, acc_type, acc_desc, " +
+	                    		"    opened_dt, status_cd, inst_code, entity_nm, business_act, tax_id_no, " +
+	                    		"    trade_license_no, est_dt, addr_type, addr, city, country, state, " +
+	                    		"    occupation, employer_cd, employer_phone, employer_addr, role " +
+	                    		") " +
+	                    		"SELECT " +
+	                    		"    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,? " +
+	                    		"FROM dual " +
+	                    		"WHERE NOT EXISTS ( " +
+	                    		"    SELECT 1 FROM STATIC_FIU WHERE rel_id = ? " +
+	                    		")";
 
-	                    int seq = 1;
-	                    int batchSize = 500;
-	                    List<Object[]> batch = new ArrayList<>();
+	                	int seq = 1;
+	                	int batchSize = 500;
+	                	List<Object[]> batch = new ArrayList<>();
+	                	
+	                	for (int i = 1; i < rows.size(); i++) {
+	                		String[] row = rows.get(i);
+	                		if (row == null || row.length == 0 || (row[0] != null && row[0].trim().isEmpty())) continue;
 
-	                    int expectedColumns = 50; // correct
-	                    int paramCount = 52;      // serial + seq + 50 cols
+	                		try {
+	                			int expectedColumns = 47;
+	                			int sqlParamCount = 49;     
+	                			Object[] params = new Object[sqlParamCount + 1];  
+	                			params[0] = Serial;
+	                			params[1] = seq++;
+	                			
+	                			for (int j = 0; j < Math.min(expectedColumns, row.length); j++) {
+	                				params[j + 2] = (row[j] != null && !row[j].trim().isEmpty()) ? row[j].trim() : null;
+	                			}
 
-	                    for (int i = 1; i < rows.size(); i++) 
+
+	                			params[49] = (row.length > 1) ? row[1] : null;
+
+	                			batch.add(params);
+
+	                			
+	                			if (batch.size() >= batchSize) {
+	 	                            Jdbctemplate.batchUpdate(sql, batch); 
+	 	                            batch.clear();
+
+	                			}
+
+	                		} catch (Exception ex) {
+	                			logger.error("Error inserting row {} from file {}: {}", i, file.getName(), ex.getMessage());
+	                			isError = true;
+	                		}
+	                	}
+
+
+		                if (!batch.isEmpty()) 
 	                    {
-	                        String[] row = rows.get(i);
-
-	                        // clean spaces, BOM, quotes
-	                        for (int c = 0; c < row.length; c++) 
-	                        {
-	                            if (row[c] != null) 
-	                            {
-	                                row[c] = row[c].replace("'", "")
-	                                               .replace("\uFEFF", "")
-	                                               .trim();
-
-	                                if (row[c].equalsIgnoreCase("NULL") || row[c].isEmpty())
-	                                    row[c] = null;
-	                            }
-	                        }
-
-	                        if (row.length != expectedColumns) 
-	                        {
-	                            logger.error("Skipping row {}. Expected {} columns, found {}", 
-	                                         i, expectedColumns, row.length);
-	                            continue;
-	                        }
-
-	                        try 
-	                        {
-	                            Object[] params = new Object[paramCount];
-	                            params[0] = Serial;
-	                            params[1] = seq++;
-
-	                            for (int j = 0; j < expectedColumns; j++) 
-	                            {
-	                                params[j + 2] = row[j];
-	                            }
-
-	                            batch.add(params);
-
-	                            if (batch.size() >= batchSize) 
-	                            {
-	                                Jdbctemplate.batchUpdate(sql, batch);
-	                                batch.clear();
-	                            }
-	                        }
-	                        catch (Exception ex) 
-	                        {
-	                            logger.error("Error inserting row {}: {}", i, ex.getMessage());
-	                            isError = true;
-	                        }
-	                    }
-
-	                    if (!batch.isEmpty())
+	                        logger.info("Flushing remaining {} records for file {}", batch.size(), file.getName());
 	                        Jdbctemplate.batchUpdate(sql, batch);
-
-	                } 
-	                catch (Exception ex) 
-	                {
-	                    logger.error("Error processing file {}: {}", file.getName(), ex.getMessage());
-	                    isError = true;
+	                        batch.clear();
+	                    }
+	                	
 	                }
+	                catch (Exception e)
+	                {
+	                 logger.error("Error processing static file {}: {}", file.getName(), e.getMessage(), e);
+	                 isError = true;
+	                }
+	                
+	                
 	            }
+	            
+	             bk_path = backup_file(file);
+
+	             if (isError) 
+	             {
+	                 sql = "UPDATE fileit001 SET DSTPATH=?, STATUS=?, RESCODE=?, RESPDESC=? WHERE REMARKS=?";
+	                 
+	                 Jdbctemplate.update(sql, new Object[]{bk_path, "FAILED", "500", "FAILED", Serial });
+	             } 
+	             
+	             else 
+	             {
+	                 sql = "UPDATE fileit001 SET DSTPATH=?, STATUS=?, RESCODE=?, RESPDESC=? WHERE REMARKS=?";
+	                 
+	                 Jdbctemplate.update(sql, new Object[]{ bk_path, "SUCCESS",  "200","Static file processed successfully",Serial });
+	             }
+    	        
 	        }
 
-	        details.addProperty("result", isError ? "failed" : "success");
-	        details.addProperty("message", isError ? "Some errors occurred" : "Inserted successfully");
+	         details.addProperty("result", "success");
+	         details.addProperty("stscode", "HP00");
+	         details.addProperty("message", "All static files processed successfully and moved to backup folder.");
+	         logger.info("All static files processed successfully and moved to backup folder.");
 
 	    } 
 	    catch (Exception e) 
 	    {
-	        logger.error("Unexpected error: {}", e.getMessage());
-	        details.addProperty("result", "failed");
-	        details.addProperty("message", e.getMessage());
+	         details.addProperty("result", "failed");
+	         details.addProperty("stscode", "HP06");
+	         details.addProperty("message", e.getLocalizedMessage());
+	         logger.error("Exception in EDMP_STATIC_FILE_READ: {}", e.getLocalizedMessage(), e);
+
 	    }
 
 	    return details;
 	}
 
-	                    
-//	
-//	public JsonObject static_fiu(String PATH) 
-//	{
-//	    JsonObject details = new JsonObject();
-//
-//	    try 
-//	    	{
-//			Common_Utils util = new Common_Utils();
-//	    	
-//			String Sql = "select suborgcode from sysconf001";
-//				
-//			List<String> result = Jdbctemplate.queryForList(Sql, String.class);
-//			
-//			String SUBORGCODE = result.size() !=0 ? result.get(0) : "";  
-//			 
-//			boolean isError = false;
-//			
-//			String bk_path = null;
-//
-//
-//	        File folder = new File(PATH);
-//	        File[] files = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".csv"));
-//
-//	        if (files == null || files.length == 0) 
-//	        {
-//	            logger.info("No EDMP Static files found in directory: " + PATH);            
-//	            details.addProperty("result", "failed");
-//	            details.addProperty("message", "No EDMP Static files found in directory: " + PATH);
-//	            return details;
-//	        } 
-//	       
-//	            logger.info("Found {} CSV files in {}", files.length, PATH);
-//	       
-//	
-//	        for (File file : files) 
-//	        {
-//			    String sql = null;
-//	        	
-//	        	 String Serial = Generate_FIU_Serial().get("Serial").getAsString();
-//	        	 
-//	        	 String filePath = file.getAbsolutePath(); 
-//
-//	        	 sql = "select * from fileit001 where srcpath = ?";
-//	        	 
-//	        	 List<Map<String, Object>> FILEIT = Jdbctemplate.queryForList(sql, new Object[]{filePath});
-//	        	         	 
-//	             if(FILEIT.isEmpty()) 
-//	 	         {
-//    
-//		            logger.info("Processing file: {}", file.getName());
-//		           
-//	
-//		            try 
-//		            {
-//		                List<String[]> rows;
-//		                try (CSVReader csvReader = new CSVReaderBuilder(new FileReader(file))
-//		                        .withCSVParser(new CSVParserBuilder().withSeparator('|').build()).build()) 
-//		                {
-//		                    rows = csvReader.readAll();
-//		                }
-//		                
-//	
-//		                if (rows.size() <= 1) 
-//		                {
-//		                    logger.warn("No data rows found in file: {}", file.getName());
-//		                    isError = true;
-//							continue;
-//		                }
-//	
-//		                sql = "INSERT INTO static_fiu (\r\n"
-//		                		+ "    serial , seq , account_no, rel_id, currency_cd, category, master_no, primary_fg, gender, \r\n"
-//		                		+ "    first_nm, middle_nm, last_nm, birth_dt, pob_place, \r\n"
-//		                		+ "    inc_state, residence, nationality, id_type, id_no, \r\n"
-//		                		+ "    expiry_dt, issue_dt, issue_country, contact_type, comm_type, phone_no, \r\n"
-//		                		+ "    email, inst_name, branch, acc_holder_nm, acc_type, acc_desc, \r\n"
-//		                		+ "    opened_dt, status_cd, inst_code, entity_nm, business_act, tax_id_no, \r\n"
-//		                		+ "    trade_license_no, est_dt, addr_type, addr, city, country, state, \r\n"
-//		                		+ "    occupation, employer_cd, employer_phone, employer_addr, role\r\n"
-//		                		+ ")VALUES (\r\n"
-//		                        + "    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?\r\n"
-//		                        + "\r\n"
-//		                        + ")";
-//		                
-//		 	            int seq = 1;
-//	 	                int batchSize = 500;  // Define the batch size for batch processing
-//	 	                List<Object[]> batch = new ArrayList<>();  // List to hold the batch of rows
-//
-//		                for (int i = 1; i < rows.size(); i++) 
-//		                {
-//		                    String[] row = rows.get(i);
-//		                    if (row == null || row.length == 0 || (row[0] != null && row[0].trim().isEmpty())) continue;
-//	
-//		                    try 
-//		                    {
-//		                    	
-//		                    	 int expectedColumns = 47; // actual columns in CSV
-//		                         int paramCount = 49; 
-//		                            
-//		                         if (row.length != expectedColumns) 
-//		                            {
-//		                                logger.error("Skipping row {} from file {}: Expected {} columns, found {}", i, file.getName(), expectedColumns, row.length);
-//		                                isError = true;
-//		                                continue;
-//		                            }
-//		                         
-//		                         Object[] params = new Object[paramCount];
-//		                            params[0] = Serial;
-//		                            params[1] = seq++;
-//	
-//		                            for (int j = 0; j < expectedColumns; j++) 
-//		                            {
-//		                                params[j + 2] = (row[j] != null && !row[j].trim().isEmpty()) ? row[j].trim() : null;
-//		                            }
-//	
-//		                        batch.add(params); 
-//	 	                        
-//	 	                        
-//	 	                        if (batch.size() >= batchSize) 
-//	 	                        {
-//	 	                            Jdbctemplate.batchUpdate(sql, batch);  // Execute the batch insert
-//	 	                            batch.clear();  // Clear the batch after executing
-//	 	                        }
-//		                    } 
-//		                    catch (Exception ex) 
-//		                    {
-//		                        logger.error("Error inserting row {} from file {}: {}", i, file.getName(), ex.getMessage());
-//								isError = true;
-//		                    }
-//		                }
-//		                
-//		                
-//		                if (!batch.isEmpty()) 
-//	                    {
-//	                        logger.info("Flushing remaining {} records for file {}", batch.size(), file.getName());
-//	                        Jdbctemplate.batchUpdate(sql, batch);
-//	                        batch.clear();
-//	                    }
-//		                
-//		            }
-//		            catch (Exception e) 
-//		            {
-//		            	 logger.error("Error processing static file {}: {}", file.getName(), e.getMessage(), e);
-//	                }
-//	            }
-//							
-//	           //  bk_path = backup_file(file);
-//
-//	             if (FILEIT.isEmpty()) 
-//	             {
-//	                 if (isError) 
-//	                 {
-//	                     sql = "insert into fileit001(SUBORGCODE, CHCODE, PAYTYPE, REQDATE, REQREFNO, REQTIME, FILETYPE, SRCPATH, DSTPATH, REMARKS, STATUS, RESCODE, RESPDESC) values(?,?,?,?,?,?,?,?,?,?,?,?,?)";
-//	                     Jdbctemplate.update(sql, new Object[]{
-//	                             SUBORGCODE, "FIU", "EDMP_STATIC", util.getCurrentDate("dd-MMM-yyyy"), Serial,
-//	                             util.get_oracle_Timestamp(), "CSV", file.getPath(), bk_path, Serial, "FAILED", "200", "FAILED"
-//	                     });
-//	                 } 
-//	                 else 
-//	                 {
-//	                     sql = "insert into fileit001(SUBORGCODE, CHCODE, PAYTYPE, REQDATE, REQREFNO, REQTIME, FILETYPE, SRCPATH, DSTPATH, REMARKS, STATUS, RESCODE, RESPDESC) values(?,?,?,?,?,?,?,?,?,?,?,?,?)";
-//	                     Jdbctemplate.update(sql, new Object[]{
-//	                             SUBORGCODE, "FIU", "EDMP_STATIC", util.getCurrentDate("dd-MMM-yyyy"), Serial,
-//	                             util.get_oracle_Timestamp(), "CSV", file.getPath(), bk_path, Serial, "SUCCESS", "200", "Static file processed successfully"
-//	                     });
-//	                 }
-//	             }
-//	         }
-//
-//	         details.addProperty("result", "success");
-//	         details.addProperty("stscode", "HP00");
-//	         details.addProperty("message", "All static files processed successfully and moved to backup folder.");
-//	         logger.info("All static files processed successfully and moved to backup folder.");
-//
-//	     } 
-//	     catch (Exception e) 
-//	     {
-//	         details.addProperty("result", "failed");
-//	         details.addProperty("stscode", "HP06");
-//	         details.addProperty("message", e.getLocalizedMessage());
-//	         logger.error("Exception in EDMP_STATIC_FILE_READ: {}", e.getLocalizedMessage(), e);
-//	     }
-//
-//	     return details;
-//	 }
 	
  	public JsonObject get_file_Id(FIU_Menu info)
  	{
@@ -783,14 +613,15 @@ public class FIU_EDMP
  		    String i_sub_code = !util.isNullOrEmpty(Info.get("i_sub_code").getAsString()) ? Info.get("i_sub_code").getAsString() : "NA" ;
  		  
  		    
- 		   Double from_amt = Double.parseDouble(from_amt_str);
- 		  Double to_amt   = Double.parseDouble(to_amt_str);
- 		  
- 		   SimpleDateFormat inputFormat = new SimpleDateFormat("dd-MM-yyyy");
- 		  SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd");
 
- 		  java.util.Date fromDateUtil = inputFormat.parse(fromdate);
- 		  java.util.Date toDateUtil = inputFormat.parse(todate);
+			Double from_amt = Double.parseDouble(from_amt_str);
+			Double to_amt   = Double.parseDouble(to_amt_str);
+			
+			SimpleDateFormat inputFormat = new SimpleDateFormat("dd-MM-yyyy");
+			SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd");
+			
+			java.util.Date fromDateUtil = inputFormat.parse(fromdate);
+			java.util.Date toDateUtil = inputFormat.parse(todate);
 
 
  		   
@@ -838,7 +669,7 @@ public class FIU_EDMP
 	
 	
 
- 	public JsonObject store_report002_fiu(String payload)
+ /*	public JsonObject store_report002_fiu(String payload)
  	{
  		
  		JsonObject details = new JsonObject();
@@ -860,7 +691,8 @@ public class FIU_EDMP
  			String t_amt = data.get("i_tamount").getAsString();
  				
  			
- 			System.out.println(t_amt);
+ 			
+ 			 System.out.println(t_amt);
  			 String Serial = Generate_FIU_Serial().get("Serial").getAsString();
         				
  			 String procedureCall = "{CALL PACK_FIU_REPORT.store_report002_fiu(?,?,?,?,?,?,?,?)}";  
@@ -924,6 +756,209 @@ public class FIU_EDMP
 		}
  		return details;
  	}
+*/
+ 	
+ 	public JsonObject store_report002_fiu(String payload,int start,int length)
+	{
+		
+		JsonObject details = new JsonObject();
+				
+		try
+		{			
+			Common_Utils util = new Common_Utils();
+			
+			
+			JsonObject data = util.StringToJsonObject(payload);
+			
+			
+			String type_trans = data.get("type").getAsString();
+			String mode_trans = data.get("subCode").getAsString();
+			String from_date = data.get("fromDate").getAsString();
+			String to_date = data.get("toDate").getAsString();
+			String amt_trans = data.get("amount").getAsString();
+			String d_credit_debit = data.get("direction").getAsString();
+			String t_amt = data.get("i_tamount").getAsString();
+			
+		//	 String Serial = Generate_FIU_Serial().get("Serial").getAsString();
+			
+			String Serial = "234";
+        				
+             String procedureCall = "{CALL PACK_FIU_REPORT.store_report002_fiu(?,?,?,?,?,?,?,?)}";  
+
+ 			 System.out.println(Serial);
+ 			 
+ 			Jdbctemplate.execute((Connection connection) -> {
+ 	            CallableStatement cs = connection.prepareCall(procedureCall);
+ 	            cs.setString(1, Serial);
+ 	            cs.setString(2, type_trans);
+ 	            cs.setString(3, mode_trans);
+ 	            cs.setString(4, from_date);
+ 	            cs.setString(5, to_date);
+ 	            cs.setString(6, amt_trans);
+ 	            cs.setString(7, t_amt);            
+ 	            cs.setString(8, d_credit_debit);
+ 	            cs.execute();
+ 	            cs.close();
+ 	            return null;
+ 	        });
+			
+			 String query1="SELECT COUNT(*) as totalCount FROM REPORT002_FIU WHERE SERIAL=? AND COLUMN1=?";
+		      int totalCount=Jdbctemplate.queryForObject(query1,Integer.class, Serial, "C");
+		      logger.info("Total count="+totalCount);
+		      if(totalCount>=50)
+		      {
+		    	 System.out.println("Server side pagination");
+			String query = "SELECT * FROM  (SELECT a.*, ROWNUM rnum FROM (SELECT COLUMN2, COLUMN3, COLUMN4, COLUMN5, COLUMN6, COLUMN7, "
+	                + "COLUMN8, COLUMN9, COLUMN10, COLUMN11, COLUMN12, COLUMN13 "
+	                + "FROM REPORT002_FIU WHERE SERIAL = ? AND COLUMN1 = ? ORDER BY COLUMN14) a WHERE ROWNUM <= ? + ? ) WHERE rnum > ?";
+ 
+	       List<Map<String, Object>> rows = Jdbctemplate.queryForList(query, Serial , "C",start,length,start);
+	       int filteredRecords = (rows != null && !rows.isEmpty()) ? totalCount : 0;
+	       
+	       System.out.println("filteredRecords :" +filteredRecords);
+	       
+			JsonArray dataArray = new JsonArray();
+			
+		      for (Map<String, Object> row : rows) {
+		          JsonObject obj = new JsonObject();
+	
+		          obj.addProperty("REPORTTYPE",          row.get("COLUMN2")  != null ? row.get("COLUMN2").toString()  : "");
+		          obj.addProperty("TRANSACTION_TYPE",    row.get("COLUMN3")  != null ? row.get("COLUMN3").toString()  : "");
+		          obj.addProperty("TRANSACTION_DATE",    row.get("COLUMN4")  != null ? row.get("COLUMN4").toString()  : "");
+		          obj.addProperty("DEBIT_CREDIT",        row.get("COLUMN5")  != null ? row.get("COLUMN5").toString()  : "");
+		          obj.addProperty("TRANSACTION_AMT",     row.get("COLUMN6")  != null ? row.get("COLUMN6").toString()  : "");
+		          obj.addProperty("CURRENCY",            row.get("COLUMN7")  != null ? row.get("COLUMN7").toString()  : "");
+		          obj.addProperty("DEBIT_ACCT",          row.get("COLUMN8")  != null ? row.get("COLUMN8").toString()  : "");
+		          obj.addProperty("CREDIT_ACCT",         row.get("COLUMN9")  != null ? row.get("COLUMN9").toString()  : "");
+		          obj.addProperty("SENDER_NAME",         row.get("COLUMN10") != null ? row.get("COLUMN10").toString() : "");
+		          obj.addProperty("RECEIVER_NAME",       row.get("COLUMN11") != null ? row.get("COLUMN11").toString() : "");
+		          obj.addProperty("SOURCE_BANK",         row.get("COLUMN12") != null ? row.get("COLUMN12").toString() : "");
+		          obj.addProperty("DESTINATION_BANK",    row.get("COLUMN13") != null ? row.get("COLUMN13").toString() : "");
+	
+		          dataArray.add(obj);
+		         details.add("Info", new Gson().toJsonTree(dataArray != null ? dataArray : new JsonArray()));
+		      }
+ 
+		     int recordsTotal = totalCount;
+	        
+	        String unfilteredCountSql = "SELECT COUNT(*) FROM REPORT002_FIU";
+	        
+	        if (query1 != null && !query1.equals(unfilteredCountSql)) {
+	            
+	        	recordsTotal = Jdbctemplate.queryForObject(unfilteredCountSql, new Object[]{}, Integer.class);
+	        }
+	        
+		     details.add("Data", dataArray);
+		     details.addProperty("Totalcount",totalCount );
+	         details.addProperty("Result", "SUCCESS");
+		     details.addProperty("Message", "Report generated successfully");
+		    details.addProperty("recordsTotal", recordsTotal);
+		    details.addProperty("recordsFiltered", filteredRecords);
+		   details.addProperty("totalPages", (int) Math.ceil((double) totalCount / length));
+		    
+ 
+		      }
+		      else {
+		    	  System.out.println("Client side pagination");
+		    	 String query ="SELECT COLUMN2, COLUMN3, COLUMN4, COLUMN5, COLUMN6, COLUMN7,"
+		    	 		+ "COLUMN8, COLUMN9, COLUMN10, COLUMN11, COLUMN12, COLUMN13 "
+		    	 		+ " FROM REPORT002_FIU WHERE SERIAL = ? AND COLUMN1 = ?";
+		    	List<Map<String, Object>> rows = Jdbctemplate.queryForList(query, Serial , "C");
+		    	JsonArray dataArray = new JsonArray();
+	 			
+	 		      for (Map<String, Object> row : rows) {
+	 		          JsonObject obj = new JsonObject();
+	 	
+	 		          obj.addProperty("REPORTTYPE",          row.get("COLUMN2")  != null ? row.get("COLUMN2").toString()  : "");
+	 		          obj.addProperty("TRANSACTION_TYPE",    row.get("COLUMN3")  != null ? row.get("COLUMN3").toString()  : "");
+	 		          obj.addProperty("TRANSACTION_DATE",    row.get("COLUMN4")  != null ? row.get("COLUMN4").toString()  : "");
+	 		          obj.addProperty("DEBIT_CREDIT",        row.get("COLUMN5")  != null ? row.get("COLUMN5").toString()  : "");
+	 		          obj.addProperty("TRANSACTION_AMT",     row.get("COLUMN6")  != null ? row.get("COLUMN6").toString()  : "");
+	 		          obj.addProperty("CURRENCY",            row.get("COLUMN7")  != null ? row.get("COLUMN7").toString()  : "");
+	 		          obj.addProperty("DEBIT_ACCT",          row.get("COLUMN8")  != null ? row.get("COLUMN8").toString()  : "");
+	 		          obj.addProperty("CREDIT_ACCT",         row.get("COLUMN9")  != null ? row.get("COLUMN9").toString()  : "");
+	 		          obj.addProperty("SENDER_NAME",         row.get("COLUMN10") != null ? row.get("COLUMN10").toString() : "");
+	 		          obj.addProperty("RECEIVER_NAME",       row.get("COLUMN11") != null ? row.get("COLUMN11").toString() : "");
+	 		          obj.addProperty("SOURCE_BANK",         row.get("COLUMN12") != null ? row.get("COLUMN12").toString() : "");
+	 		          obj.addProperty("DESTINATION_BANK",    row.get("COLUMN13") != null ? row.get("COLUMN13").toString() : "");
+	 	
+	 		          dataArray.add(obj);
+	 		      }
+	 		      
+	 		     details.add("Data", dataArray);
+	 		     details.addProperty("Totalcount",totalCount );
+	 	         details.addProperty("Result", "SUCCESS");
+	 		     details.addProperty("Message", "Report generated successfully");
+		    	
+		      }
+		
+		}
+		catch (Exception e)
+		{
+			details.addProperty("Result", "Failed");
+			details.addProperty("Message", e.getMessage());
+			
+			logger.debug("Exception store_report002_fiu :::::"+e.getLocalizedMessage());
+		}
+		return details;
+	}
+ 
+ 		     
+ 		     
+// 		    String headerQuery = "SELECT * FROM REPORT002_FIU WHERE SERIAL = ? AND COLUMN1 = 'H'";
+// 		    Map<String, Object> headerRow = Jdbctemplate.queryForMap(headerQuery, "45");
+//
+// 		    String dataQuery = "SELECT * FROM REPORT002_FIU WHERE SERIAL = ? AND COLUMN1 = 'C'";
+// 		    List<Map<String, Object>> dataRows = Jdbctemplate.queryForList(dataQuery, "45");
+//
+// 		    JsonArray dataArray = new JsonArray();
+//
+// 		    Map<String, Integer> validHeaders = new LinkedHashMap<>();
+//
+// 		    for (int i = 2; i <= 100; i++) {
+// 		        String colName = "COLUMN" + i;
+//
+// 		        Object headerValue = headerRow.get(colName);
+// 		        if (headerValue == null) continue;
+//
+// 		        String header = headerValue.toString().trim();
+//
+// 		        if (header.contains("$")) continue;
+//
+// 		        validHeaders.put(header, i);
+// 		    }
+//
+// 		    for (Map<String, Object> row : dataRows) {
+// 		        JsonObject obj = new JsonObject();
+//
+// 		        for (Map.Entry<String, Integer> entry : validHeaders.entrySet()) {
+// 		            String header = entry.getKey(); 
+// 		            int colIndex = entry.getValue();
+//
+// 		            String dataColumn = "COLUMN" + colIndex;
+// 		            Object value = row.get(dataColumn);
+//
+// 		            obj.addProperty(header, value != null ? value.toString() : "");
+// 		        }
+//
+// 		        dataArray.add(obj);
+// 		    }
+// 		    
+// 		     details.add("Data", dataArray);
+//
+// 	         details.addProperty("Result", "SUCCESS");
+// 		     details.addProperty("Message", "Report generated successfully");
+// 		
+//		} 
+// 		catch (Exception e) 
+// 		{
+//			details.addProperty("Result", "Failed");
+// 			details.addProperty("Message", e.getMessage());
+// 			
+// 			logger.debug("Exception store_report002_fiu :::::"+e.getLocalizedMessage());
+//		}
+// 		return details;
+// 	}
 
  	public String backup_file(File file)
  	{

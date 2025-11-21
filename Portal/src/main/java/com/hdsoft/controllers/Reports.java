@@ -33,6 +33,7 @@ import org.springframework.web.servlet.ModelAndView;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.hdsoft.Repositories.FIU_Menu;
 import com.hdsoft.Repositories.RTS003;
 import com.hdsoft.Repositories.RTS006;
@@ -679,7 +680,7 @@ public class Reports
     }
     
     
-    @RequestMapping(value = "/Datavision/FIU_REPORT/REPORT_STORE", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+ /*   @RequestMapping(value = "/Datavision/FIU_REPORT/REPORT_STORE", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody String Test_Service(@RequestBody String Message, HttpServletRequest request,HttpServletResponse response, HttpSession session) throws IOException 
     {
     	JsonObject details = new JsonObject();
@@ -687,12 +688,49 @@ public class Reports
     	System.out.println("ehjdfwehsdswbdjwbd");
     	
     	System.out.println(Message);
-    	
+//    	
+//    	 JsonParser parser = new JsonParser();
+//	   	 JsonObject json = parser.parse(Message).getAsJsonObject();
+//	
+//	   	 int start = json.has("start") ? json.get("start").getAsInt() : 0;
+//	   	 int length = json.has("length") ? json.get("length").getAsInt() : 10;   	
+//	   	 
+//	     details = FIU_EDMP.store_report002_fiu(Message,start,length);
     	details = FIU_EDMP.store_report002_fiu(Message);
 
     	return details.toString();
     }
+  */
     
+    @RequestMapping(value = "/Datavision/FIU_REPORT/REPORT_STORE", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody String Test_Service(@RequestBody String Message, HttpServletRequest request,HttpServletResponse response, HttpSession session) throws IOException
+    {
+    	JsonObject details = new JsonObject();
+    	
+    	System.out.println(Message);
+    	
+             try {
+            	
+            	 JsonParser parser = new JsonParser();
+            	 JsonObject json = parser.parse(Message).getAsJsonObject();
+ 
+            	 int start = json.has("start") ? json.get("start").getAsInt() : 0;
+            	 int length = json.has("length") ? json.get("length").getAsInt() : 10;
+            	
+                 details = FIU_EDMP.store_report002_fiu(Message,start,length);
+              
+                 System.out.println(details.toString());
+                 
+             }
+             catch (NumberFormatException e) {
+                 details.addProperty("Result", "failed");
+                 details.addProperty("Message", "Invalid pagination parameters");
+                 details.addProperty("Stscode", "400");
+    	
+             }
+ 
+    	return details.toString();
+    }
     
     //------------------------------------------------------------------------------------------------------------
     
